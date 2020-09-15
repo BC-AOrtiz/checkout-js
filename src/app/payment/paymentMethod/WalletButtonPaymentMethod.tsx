@@ -36,6 +36,9 @@ interface WithCheckoutWalletButtonPaymentMethodProps {
     expiryMonth?: string;
     expiryYear?: string;
     isPaymentSelected: boolean;
+    isStoreCreditApplied: boolean;
+    grandTotal: number;
+    storeCreditAmount: number;
     signOut(options: CustomerRequestOptions): void;
 }
 
@@ -204,11 +207,21 @@ class WalletButtonPaymentMethod extends Component<
             method,
         } = this.props;
 
-        if (normalizeWalletPaymentData(method.initializationData)) {
+        if (normalizeWalletPaymentData(method.initializationData) || this.isStoreCreditUsed()) {
             disableSubmit(method, false);
         } else {
             disableSubmit(method, true);
         }
+    }
+
+    private isStoreCreditUsed(): boolean {
+        const {
+            isStoreCreditApplied,
+            grandTotal,
+            storeCreditAmount,
+        } = this.props;
+
+        return  isStoreCreditApplied && grandTotal <= storeCreditAmount;
     }
 
     private handleSignOut: () => void = async () => {
@@ -281,9 +294,10 @@ function mapFromCheckoutProps(
     { checkoutService, checkoutState }: CheckoutContextProps,
     { method }: WalletButtonPaymentMethodProps
 ): WithCheckoutWalletButtonPaymentMethodProps | null {
-    const { data: { getBillingAddress, getCheckout } } = checkoutState;
+    const { data: { getBillingAddress, getCheckout, getCustomer } } = checkoutState;
     const billingAddress = getBillingAddress();
     const checkout = getCheckout();
+    const customer = getCustomer();
 
     if (!billingAddress || !checkout) {
         return null;
@@ -291,12 +305,17 @@ function mapFromCheckoutProps(
 
     const walletPaymentData = normalizeWalletPaymentData(method.initializationData);
 
+    const storeCreditAmount =  customer ? customer.storeCredit :  0;
+
     return {
         ...walletPaymentData,
         // FIXME: I'm not sure how this would work for non-English names.
         cardName: walletPaymentData && [billingAddress.firstName, billingAddress.lastName].join(' '),
         isPaymentSelected: some(checkout.payments, { providerId: method.id }),
         signOut: checkoutService.signOutCustomer,
+        isStoreCreditApplied: checkout.isStoreCreditApplied,
+        grandTotal: checkout.grandTotal,
+        storeCreditAmount,
     };
 }
 

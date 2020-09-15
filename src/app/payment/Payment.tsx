@@ -320,6 +320,7 @@ class Payment extends Component<PaymentProps & WithCheckoutPaymentProps & WithLa
 
         try {
             await applyStoreCredit(useStoreCredit);
+            await this.componentDidMount();
         } catch (e) {
             onUnhandledError(e);
         }

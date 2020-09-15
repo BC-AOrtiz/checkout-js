@@ -151,6 +151,34 @@ describe('WalletButtonPaymentMethod', () => {
             .toHaveBeenCalledWith(defaultProps.method, true);
     });
 
+    it('enable submit button with store credit card', () => {
+        const props = merge( {}, defaultProps, {
+            isStoreCreditApplied: true,
+            storeCreditAmount: 200,
+        });
+
+        mount(<WalletButtonPaymentMethodTest
+            { ...props }
+        />);
+
+        expect(paymentContext.disableSubmit)
+            .toHaveBeenCalledWith(defaultProps.method, false);
+    });
+
+    it('disable submit button with store credit card enable less than total', () => {
+        const props = merge( {}, defaultProps, {
+            isStoreCreditApplied: true,
+            storeCreditAmount: 100,
+        });
+
+        mount(<WalletButtonPaymentMethodTest
+            { ...props }
+        />);
+
+        expect(paymentContext.disableSubmit)
+            .toHaveBeenCalledWith(defaultProps.method, true);
+    });
+
     describe('when user is signed into their payment method account and credit card is selected from their wallet', () => {
         beforeEach(() => {
             jest.spyOn(checkoutState.data, 'getCheckout')
